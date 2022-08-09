@@ -15,12 +15,17 @@ void debug(const char* format, ...)
 	va_end(args);
 }
 
-void Dump(HKEY rootKey)
+void Dump(HKEY rootKey, TCHAR *rootKeyName, boolean isFirst)
 {
+	if (!isFirst)
+	{
+		debug(",");
+	}
+	debug("{\n");
+	debug("\t\"name\":\""); OutputDebugString(rootKeyName); debug("\"\n");
+
 	Win32Api win32Api;
 
-	TCHAR achKey[255]; // buffer for subkey name
-	DWORD cbName = 255; // size of name string
 	TCHAR achClass[MAX_PATH] = TEXT("");  // buffer for class name 
 	DWORD cchClassName = 0; // size of class string
 	DWORD cSubKeys = 0; // number of subkeys 
@@ -31,15 +36,28 @@ void Dump(HKEY rootKey)
 	DWORD cbMaxValueData; // longest value data
 	DWORD cbSecurityDescriptor; // size of security descriptor
 	FILETIME ftLastWriteTime; // last write time
-	DWORD retCode = win32Api.RegQueryInfoKeyW(rootKey, achClass, &cchClassName, NULL, &cSubKeys, &cbMaxSubKey, &cchMaxClass, &cValues, &cchMaxValue, &cbMaxValueData, &cbSecurityDescriptor, &ftLastWriteTime);
+
+	TCHAR achKey[MAX_KEY_LENGTH]; // buffer for subkey name
+	DWORD cbName = MAX_KEY_LENGTH; // size of name string
+
+	TCHAR achValue[16383]; // buffer for value name
+	DWORD cchValue = 16383; // size of name string
+	DWORD valueType;
+
+
+	DWORD retCode = win32Api.RegQueryInfoKeyW(rootKey, achClass, &cchClassName, NULL, &cSubKeys, &cbMaxSubKey, &cchMaxClass, 
+		&cValues, &cchMaxValue, &cbMaxValueData, &cbSecurityDescriptor, &ftLastWriteTime);
+
+	PBYTE valueBuf = new BYTE[cbMaxValueData];
+	DWORD valueBufSize = cbMaxValueData;
 
 	if (cSubKeys)
 	{
-		debug("\nNumber of subkeys: %d\n", cSubKeys);
+		debug("\t,\"keys\":[\n");
 
 		for (DWORD i = 0; i<cSubKeys; i++)
 		{
-			cbName = 255;
+			cbName = MAX_KEY_LENGTH;
 			retCode = win32Api.RegEnumKeyExW(rootKey, i,
 				achKey,
 				&cbName,
@@ -49,35 +67,70 @@ void Dump(HKEY rootKey)
 				&ftLastWriteTime);
 			if (retCode == ERROR_SUCCESS)
 			{
-				debug("(%d)", i + 1); OutputDebugString(achKey); debug("\n");
+				HKEY subKey = {};
+				retCode = win32Api.RegOpenKeyExW(rootKey, achKey, 0, KEY_READ, &subKey);
+				if (retCode == ERROR_SUCCESS)
+				{
+					Dump(subKey, achKey, i==0);
+				}
 			}
 		}
+		debug("]\n");
 	}
 
-	TCHAR achValue[16383];
-	DWORD cchValue = 16383;
 
 	if (cValues)
 	{
-		debug("\nNumber of values: %d\n", cValues);
-
+		debug("\t,\"values\":[\n");
 
 		for (DWORD i = 0, retCode = ERROR_SUCCESS; i<cValues; i++)
 		{
-			cchValue = 16383;
+			cchValue = MAX_VALUE_NAME;
 			achValue[0] = '\0';
 			retCode = win32Api.RegEnumValueW(rootKey, i,
 				achValue,
 				&cchValue,
 				NULL,
-				NULL,
-				NULL,
-				NULL);
+				&valueType,
+				valueBuf, 
+				&valueBufSize);
 
 			if (retCode == ERROR_SUCCESS)
 			{
-				debug("(%d)", i + 1); OutputDebugString(achValue); debug("\n");
+				if (i != 0)
+				{
+					debug(",");
+				}
+				debug("{\n");
+				debug("\t\"name\":\""); OutputDebugString(achValue); debug("\"\n");
+				debug("\t,\"value_type\":");
+
+				if (REG_SZ == valueType)
+				{
+					debug("\"REG_SZ\"\n");
+					debug("\t,\"value\":\"\"\n");
+				} 
+				else if (REG_DWORD == valueType)
+				{
+					debug("\"REG_DWORD\"\n");
+					debug("\t,\"value\":\"%08X\"\n", *(PDWORD)valueBuf);
+				}
+				else if (REG_MULTI_SZ == valueType)
+				{
+					debug("\"REG_MULTI_SZ\"\n");
+					debug("\t,\"value\":\"\"\n");
+				}
+				else
+				{
+					debug("\"unknown type\"\n");
+				}
+
+				debug("}\n");
 			}
 		}
+		debug("]\n");
 	}
+
+	win32Api.RegCloseKey(rootKey);
+	debug("}\n");
 }

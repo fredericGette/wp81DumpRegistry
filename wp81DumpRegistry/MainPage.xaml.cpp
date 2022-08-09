@@ -44,5 +44,5 @@ void MainPage::OnNavigatedTo(NavigationEventArgs^ e)
 	HKEY HKEY_CURRENT_CONFIG = (HKEY)0x80000005;
 	HKEY HKEY_DYN_DATA = (HKEY)0x80000006;
 
-	Dump(HKEY_DYN_DATA);
+	Dump(HKEY_CURRENT_USER, L"CURRENT_USER", true);
 }
