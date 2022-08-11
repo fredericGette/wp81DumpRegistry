@@ -40,8 +40,8 @@ void Dump(HKEY rootKey, TCHAR *rootKeyName, boolean isFirst)
 	TCHAR achKey[MAX_KEY_LENGTH]; // buffer for subkey name
 	DWORD cbName = MAX_KEY_LENGTH; // size of name string
 
-	TCHAR achValue[16383]; // buffer for value name
-	DWORD cchValue = 16383; // size of name string
+	TCHAR achValue[MAX_VALUE_NAME]; // buffer for value name
+	DWORD cchValue = MAX_VALUE_NAME; // size of name string
 	DWORD valueType;
 
 
