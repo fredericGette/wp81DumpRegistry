@@ -24,6 +24,10 @@ TCHAR* escape(TCHAR* buffer, DWORD bufferSize) {
 			if (src == '\\' || src == '\"') {
 				*ptr++ = '\\';
 			}
+			if (src != 0 && src < 32) {
+				src = ' ';
+			}
+
 			*ptr++ = src;
 	}
 	return dest;
@@ -135,11 +139,34 @@ void Dump(HKEY rootKey, TCHAR *rootKeyName, boolean isFirst)
 				else if (REG_MULTI_SZ == ValueType)
 				{
 					debug("\"REG_MULTI_SZ\"\n");
-					debug("\t,\"value\":\"\"\n");
+					debug("\t,\"value\":[\n");
+					LPCWSTR c = (LPCWSTR)ValueData;
+					boolean isFirstString = true;
+					do
+					{
+						if (isFirstString) 
+						{ 
+							isFirstString = false;
+						}
+						else
+						{
+							debug(",");
+						}
+						debug("\t\""); OutputDebugString(c); debug("\"\n");
+						while (*c != 0) c++;
+						c++;
+					} while (*c != 0);
+					debug("]\n");
+				}
+				else if (REG_EXPAND_SZ == ValueType)
+				{
+					debug("\"REG_EXPAND_SZ\"\n");
+					TCHAR* escapedValueData = escape((TCHAR*)ValueData, ValueDataSize);
+					debug("\t,\"value\":\""); OutputDebugString((LPCWSTR)escapedValueData); debug("\"\n");
 				}
 				else
 				{
-					debug("\"unknown type\"\n");
+					debug("\"unknown type %d\"\n", ValueType);
 				}
 
 				debug("}\n");
