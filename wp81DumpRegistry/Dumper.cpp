@@ -15,26 +15,26 @@ void debug(const char* format, ...)
 	va_end(args);
 }
 
-TCHAR* escape(TCHAR* buffer, DWORD bufferSize) {
-	int i;
-	TCHAR* dest = (TCHAR*)calloc(bufferSize * 2, sizeof(TCHAR));
-	TCHAR* ptr = dest;
-	for (i = 0; i<bufferSize; i++) {
-		TCHAR src = buffer[i];
-			if (src == '\\' || src == '\"') {
-				*ptr++ = '\\';
-			}
-			if (src != 0 && src < 32) {
-				src = ' ';
-			}
+WCHAR* escape(WCHAR* buffer, DWORD bufferSize) {
+	WCHAR* dest = (WCHAR*)calloc(bufferSize * 2 + 1, sizeof(WCHAR)); // +1 allow space for a secure /0 in case of bufferSize = 0
+	WCHAR* ptr = dest;
+	for (DWORD i = 0; i<bufferSize; i++) {
+		WCHAR src = buffer[i];
+		if (src == L'\\' || src == L'\"') {
+			*ptr++ = L'\\';
+		}
+		if (src != L'\0' && src < L' ') {
+			src = L' ';
+		}
 
-			*ptr++ = src;
+		*ptr++ = src;
 	}
+	*ptr++ = L'\0'; // secure /0 in case of bufferSize = 0
 	return dest;
 }
 
 // TODO: replace "/" by "//" in keys and values to be compliant with JSON spec.
-void Dump(HKEY rootKey, TCHAR *rootKeyName, boolean isFirst)
+void Dump(HKEY rootKey, WCHAR *rootKeyName, boolean isFirst)
 {
 	if (!isFirst)
 	{
@@ -45,7 +45,7 @@ void Dump(HKEY rootKey, TCHAR *rootKeyName, boolean isFirst)
 
 	Win32Api win32Api;
 
-	TCHAR ClassName[MAX_PATH] = TEXT("");  // buffer for class name 
+	WCHAR ClassName[MAX_PATH] = TEXT("");  // buffer for class name 
 	DWORD ClassNameSize = 0; // size of class string
 	DWORD NbSubKeys = 0; // number of subkeys 
 	DWORD MaxSubKeyNameLength; // longest subkey size
@@ -56,10 +56,10 @@ void Dump(HKEY rootKey, TCHAR *rootKeyName, boolean isFirst)
 	DWORD SecurityDescriptorSize; // size of security descriptor
 	FILETIME LastWriteTime; // last write time
 
-	TCHAR SubKeyName[MAX_KEY_LENGTH]; // buffer for subkey name
+	WCHAR SubKeyName[MAX_KEY_LENGTH]; // buffer for subkey name
 	DWORD SubKeyNameSize = MAX_KEY_LENGTH; // size of name string
 
-	TCHAR ValueName[MAX_VALUE_NAME]; // buffer for value name
+	WCHAR ValueName[MAX_VALUE_NAME]; // buffer for value name
 	DWORD ValueNameSize = MAX_VALUE_NAME; // size of name string
 	DWORD ValueType;
 
@@ -105,7 +105,7 @@ void Dump(HKEY rootKey, TCHAR *rootKeyName, boolean isFirst)
 		for (DWORD i = 0, retCode = ERROR_SUCCESS; i<NbValues; i++)
 		{
 			ValueNameSize = MAX_VALUE_NAME;
-			ValueName[0] = '\0';
+			ValueName[0] = L'\0';
 			retCode = win32Api.RegEnumValueW(rootKey, i,
 				ValueName,
 				&ValueNameSize,
@@ -121,15 +121,15 @@ void Dump(HKEY rootKey, TCHAR *rootKeyName, boolean isFirst)
 					debug(",");
 				}
 				debug("{\n");
-				TCHAR* escapedValueName = escape((TCHAR*)ValueName, ValueNameSize);
-				debug("\t\"name\":\""); OutputDebugString(escapedValueName); debug("\"\n");
+				WCHAR* escapedValueName = escape((WCHAR*)ValueName, ValueNameSize);
+				debug("\t\"name\":\""); OutputDebugStringW(escapedValueName); debug("\"\n");
 				debug("\t,\"value_type\":");
 
 				if (REG_SZ == ValueType)
 				{
 					debug("\"REG_SZ\"\n");
-					TCHAR* escapedValueData = escape((TCHAR*)ValueData, ValueDataSize);
-					debug("\t,\"value\":\""); OutputDebugString((LPCWSTR)escapedValueData); debug("\"\n");
+					WCHAR* escapedValueData = escape((WCHAR*)ValueData, ValueDataSize/sizeof(WCHAR)); // ValueDataSize is a number of BYTE
+					debug("\t,\"value\":\""); OutputDebugStringW(escapedValueData); debug("\"\n");
 				} 
 				else if (REG_DWORD == ValueType)
 				{
@@ -140,7 +140,10 @@ void Dump(HKEY rootKey, TCHAR *rootKeyName, boolean isFirst)
 				{
 					debug("\"REG_MULTI_SZ\"\n");
 					debug("\t,\"value\":[\n");
-					LPCWSTR c = (LPCWSTR)ValueData;
+					WCHAR* c = (WCHAR*)ValueData;
+					WCHAR* value = nullptr;
+					DWORD valueSize = 0;
+					WCHAR* escapedValue = nullptr;
 					boolean isFirstString = true;
 					do
 					{
@@ -152,17 +155,34 @@ void Dump(HKEY rootKey, TCHAR *rootKeyName, boolean isFirst)
 						{
 							debug(",");
 						}
-						debug("\t\""); OutputDebugString(c); debug("\"\n");
-						while (*c != 0) c++;
-						c++;
-					} while (*c != 0);
+						value = c;
+						valueSize = 0;
+						while (*c != L'\0')
+						{
+							c++;
+							valueSize++;
+						}
+						c++; // skip \0
+						escapedValue = escape(value, valueSize);
+						debug("\t\""); OutputDebugStringW(escapedValue); debug("\"\n");
+					} while (*c != L'\0');
 					debug("]\n");
 				}
 				else if (REG_EXPAND_SZ == ValueType)
 				{
 					debug("\"REG_EXPAND_SZ\"\n");
-					TCHAR* escapedValueData = escape((TCHAR*)ValueData, ValueDataSize);
-					debug("\t,\"value\":\""); OutputDebugString((LPCWSTR)escapedValueData); debug("\"\n");
+					WCHAR* escapedValueData = escape((WCHAR*)ValueData, ValueDataSize/sizeof(WCHAR)); // ValueDataSize is a number of BYTE
+					debug("\t,\"value\":\""); OutputDebugStringW(escapedValueData); debug("\"\n");
+				}
+				else if (REG_QWORD == ValueType)
+				{
+					debug("\"REG_QWORD\"\n");
+					unsigned long long value = *ValueData;
+					debug("\t,\"value\":\"0x%016llx\"\n", value);
+				}
+				else if (REG_NONE == ValueType)
+				{
+					debug("\"REG_NONE\"\n");
 				}
 				else
 				{
