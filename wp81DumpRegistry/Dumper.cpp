@@ -184,6 +184,34 @@ void Dump(HKEY rootKey, WCHAR *rootKeyName, boolean isFirst)
 				{
 					debug("\"REG_NONE\"\n");
 				}
+				else if (REG_BINARY == ValueType)
+				{
+					debug("\"REG_BINARY\"\n");
+					debug("\t,\"value\":\"%dbytes ", ValueDataSize);
+					DWORD offset = 0;
+					while (offset < ValueDataSize && offset < MAX_BINARY_DISPLAY)
+					{
+						debug("%02X ", *(ValueData+offset));
+						offset++;
+					}
+					offset = 0;
+					char c = 0;
+					while (offset < ValueDataSize && offset < MAX_BINARY_DISPLAY)
+					{
+						c = *(ValueData + offset);
+						if (c < ' ')
+						{
+							c = '.';
+						}
+						if (c == '\\' || c == '\"')
+						{
+							debug("\\");
+						}
+						debug("%c", c);
+						offset++;
+					}
+					debug("\"\n");
+				}
 				else
 				{
 					debug("\"unknown type %d\"\n", ValueType);
