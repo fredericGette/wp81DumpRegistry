@@ -187,13 +187,16 @@ void Dump(HKEY rootKey, WCHAR *rootKeyName, boolean isFirst)
 				else if (REG_BINARY == ValueType)
 				{
 					debug("\"REG_BINARY\"\n");
-					debug("\t,\"value\":\"%dbytes ", ValueDataSize);
+					debug("\t,\"value_size_in_bytes\":\"%dbytes\"\n", ValueDataSize);
+					debug("\t,\"value\":\"", ValueDataSize);
 					DWORD offset = 0;
 					while (offset < ValueDataSize && offset < MAX_BINARY_DISPLAY)
 					{
 						debug("%02X ", *(ValueData+offset));
 						offset++;
 					}
+					debug("\"\n");
+					debug("\t,\"value_char\":\"", ValueDataSize);
 					offset = 0;
 					char c = 0;
 					while (offset < ValueDataSize && offset < MAX_BINARY_DISPLAY)
@@ -212,9 +215,36 @@ void Dump(HKEY rootKey, WCHAR *rootKeyName, boolean isFirst)
 					}
 					debug("\"\n");
 				}
-				else
+				else 
 				{
 					debug("\"unknown type %d\"\n", ValueType);
+					debug("\t,\"value_size_in_bytes\":\"%dbytes\"\n", ValueDataSize);
+					debug("\t,\"value\":\"", ValueDataSize);
+					DWORD offset = 0;
+					while (offset < ValueDataSize && offset < MAX_BINARY_DISPLAY)
+					{
+						debug("%02X ", *(ValueData + offset));
+						offset++;
+					}
+					debug("\"\n");
+					debug("\t,\"value_char\":\"", ValueDataSize);
+					offset = 0;
+					char c = 0;
+					while (offset < ValueDataSize && offset < MAX_BINARY_DISPLAY)
+					{
+						c = *(ValueData + offset);
+						if (c < ' ')
+						{
+							c = '.';
+						}
+						if (c == '\\' || c == '\"')
+						{
+							debug("\\");
+						}
+						debug("%c", c);
+						offset++;
+					}
+					debug("\"\n");
 				}
 
 				debug("}\n");
