@@ -19,5 +19,6 @@ namespace wp81DumpRegistry
 
 	protected:
 		virtual void OnNavigatedTo(Windows::UI::Xaml::Navigation::NavigationEventArgs^ e) override;
+		void OnTick(Object^ sender, Object^ e);
 	};
 }

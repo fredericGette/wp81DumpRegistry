@@ -37,18 +37,6 @@ void write2File(HANDLE hFile, WCHAR* format, ...)
 	va_end(args);
 }
 
-//void write2File(HANDLE hFile, WCHAR *text)
-//{
-//	DWORD dwBytesToWrite = wcslen(text) * sizeof(WCHAR);
-//	DWORD dwBytesWritten = 0;
-//	win32Api.WriteFile(
-//		hFile,           // open file handle
-//		text,      // start of data to write
-//		dwBytesToWrite,  // number of bytes to write
-//		&dwBytesWritten, // number of bytes that were written
-//		NULL);            // no overlapped structure
-//}
-
 WCHAR* escape(WCHAR* buffer, DWORD bufferSize) {
 	WCHAR* dest = (WCHAR*)calloc(bufferSize * 2 + 1, sizeof(WCHAR)); // +1 allow space for a secure /0 in case of bufferSize = 0
 	WCHAR* ptr = dest;
