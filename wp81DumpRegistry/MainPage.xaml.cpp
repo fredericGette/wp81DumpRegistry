@@ -6,6 +6,7 @@
 #include "pch.h"
 #include "MainPage.xaml.h"
 #include "Dumper.h"
+#include "Win32Api.h"
 
 using namespace wp81DumpRegistry;
 
@@ -44,5 +45,5 @@ void MainPage::OnNavigatedTo(NavigationEventArgs^ e)
 	HKEY HKEY_CURRENT_CONFIG = (HKEY)0x80000005;
 	HKEY HKEY_DYN_DATA = (HKEY)0x80000006;
 
-	Dump(HKEY_LOCAL_MACHINE, L"HKEY_LOCAL_MACHINE", true);
+	Dump2File(HKEY_USERS, L"HKEY_USERS", L"C:\\Data\\USERS\\Public\\Documents");
 }

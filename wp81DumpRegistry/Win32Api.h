@@ -60,6 +60,8 @@ extern "C" {
 	WINBASEAPI HANDLE WINAPI FindFirstFileW(LPCWSTR lpFileName, LPWIN32_FIND_DATAW lpFindFileData);
 	WINBASEAPI BOOL WINAPI FindNextFileW(HANDLE hFindFile, LPWIN32_FIND_DATAW lpFindFileData);
 	WINBASEAPI BOOL WINAPI FindClose(HANDLE hFindFile);
+	WINBASEAPI HANDLE WINAPI CreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile);
+	WINBASEAPI BOOL WINAPI WriteFile(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped);
 
 	WINBASEAPI BOOL WINAPI CreateProcessA(LPCSTR lpApplicationName, LPSTR lpCommandLine, LPSECURITY_ATTRIBUTES lpProcessAttributes, LPSECURITY_ATTRIBUTES lpThreadAttributes, BOOL bInheritHandles, DWORD dwCreationFlags, LPVOID lpEnvironment, LPCSTR lpCurrentDirectory, LPSTARTUPINFOA lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation);
 	WINBASEAPI BOOL WINAPI CloseHandle(HANDLE hObject);
@@ -110,6 +112,8 @@ public:
 	WIN32API_DEFINE_PROC(FindFirstFileW);
 	WIN32API_DEFINE_PROC(FindNextFileW);
 	WIN32API_DEFINE_PROC(FindClose);
+	WIN32API_DEFINE_PROC(CreateFileW);
+	WIN32API_DEFINE_PROC(WriteFile);
 	WIN32API_DEFINE_PROC(CreateProcessA);
 	WIN32API_DEFINE_PROC(CloseHandle);
 	const HMODULE m_Sspicli;
@@ -127,6 +131,8 @@ public:
 		WIN32API_INIT_PROC(m_Kernelbase, FindFirstFileW),
 		WIN32API_INIT_PROC(m_Kernelbase, FindNextFileW),
 		WIN32API_INIT_PROC(m_Kernelbase, FindClose),
+		WIN32API_INIT_PROC(m_Kernelbase, CreateFileW),
+		WIN32API_INIT_PROC(m_Kernelbase, WriteFile),
 		WIN32API_INIT_PROC(m_Kernelbase, CreateProcessA),
 		WIN32API_INIT_PROC(m_Kernelbase, CloseHandle),
 		m_Sspicli(GetModuleHandleW(L"SSPICLI.DLL")),
