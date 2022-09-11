@@ -32,7 +32,6 @@ HANDLE hThread;
 Windows::UI::Xaml::DispatcherTimer ^timer;
 
 typedef struct MyData {
-	DWORD test;
 	HKEY rootKey;
 	WCHAR *rootKeyName;
 	WCHAR *folderPath;
@@ -62,16 +61,15 @@ void MainPage::OnNavigatedTo(NavigationEventArgs^ e)
 	HKEY HKEY_DYN_DATA = (HKEY)0x80000006;
 
 	TextTest->Text = L"Dumping "; 
-	TextTest->Text += L"HKEY_USERS";
+	TextTest->Text += L"HKEY_LOCAL_MACHINE";
 	TextTest->Text += L" into folder ";
 	TextTest->Text += L"C:\\Data\\USERS\\Public\\Documents";
 
 	PMYDATA pData = (PMYDATA)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY,
 		sizeof(MYDATA));
-	pData->rootKey = HKEY_USERS;
-	pData->rootKeyName = L"HKEY_USERS";
+	pData->rootKey = HKEY_LOCAL_MACHINE;
+	pData->rootKeyName = L"HKEY_LOCAL_MACHINE";
 	pData->folderPath = L"C:\\Data\\USERS\\Public\\Documents";
-	pData->test = 123;
 
 	DWORD  dwThreadId;
 	hThread = CreateThread(

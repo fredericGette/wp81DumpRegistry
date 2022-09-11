@@ -22,7 +22,7 @@ void write2File(HANDLE hFile, WCHAR* format, ...)
 	va_list args;
 	va_start(args, format);
 
-	WCHAR buffer[1000];
+	WCHAR buffer[10000];
 	_vsnwprintf_s(buffer, sizeof(buffer), format, args);
 
 	DWORD dwBytesToWrite = wcslen(buffer) * sizeof(WCHAR);
